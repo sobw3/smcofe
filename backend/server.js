@@ -54,7 +54,7 @@ async function initializeDatabase() {
 }
 
 // --- Configuração do Mercado Pago ---
-const MERCADOPAGO_ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN || "APP_USR-6562410810069902-072210-5078deb346c4a41b196c00ae989731cd-2547929597"; // Use variáveis de ambiente!
+const MERCADOPAGO_ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN || "APP_USR-3008476403980875-092600-faec9bac81acdd56cabd2b0e304d31cf-250701524"; // Use variáveis de ambiente!
 const client = new MercadoPagoConfig({ accessToken: MERCADOPAGO_ACCESS_TOKEN, options: { timeout: 5000 } });
 const payment = new Payment(client);
 
