@@ -1,5 +1,10 @@
+console.log("SmartCoffee App - Versão Deploy 2.0 - Carregado com sucesso!");
+
 document.addEventListener('DOMContentLoaded', () => {
-    const API_URL = 'https://smcofe.onrender.com';
+    // ############ ATENÇÃO: COLOQUE SUA URL REAL DO RENDER AQUI ############
+    const API_URL = 'https://smcofe.onrender.com'; // Coloquei a URL que você mencionou
+    // ##################################################################
+
 
     const views = {
         main: document.getElementById('main-view'),
@@ -19,36 +24,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentDosage = null;
     let paymentPollingInterval = null;
-    let isNavigating = false; // Trava para a navegação
+    let isNavigating = false;
 
-    // --- LÓGICA DE NAVEGAÇÃO ROBUSTA ---
     function navigateTo(viewName) {
-        if (isNavigating) return; // Impede cliques múltiplos
+        if (isNavigating) return;
         isNavigating = true;
 
         const currentActive = document.querySelector('.view.active');
         const nextView = views[viewName];
 
         if (!nextView || currentActive === nextView) {
-            isNavigating = false; // Libera a trava se a navegação for inválida
+            isNavigating = false;
             return;
         }
 
-        // Aplica as classes para iniciar as animações
         if (currentActive) {
             currentActive.classList.add('exiting');
         }
         nextView.classList.add('active');
 
-        // Após a animação, limpa a tela antiga e libera a trava
         setTimeout(() => {
             if (currentActive) {
-                // A classe 'active' precisa ser removida para que a tela 'saia' do fluxo
-                // e possa ser re-animada corretamente no futuro.
                 currentActive.classList.remove('active', 'exiting');
             }
-            isNavigating = false; // Libera para nova navegação
-        }, 500); // Deve ser a mesma duração da transição CSS
+            isNavigating = false;
+        }, 500);
     }
 
     function savePaymentSession(sessionData) { localStorage.setItem('smartCoffeeSession', JSON.stringify(sessionData)); }
@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         console.log("Restaurando sessão de pagamento...", session);
         currentDosage = session.dosage;
-        pixAmountEl.textContent = `R$ ${session.dosage.price.toFixed(2).replace('.', ',')}`;
+        pixAmountEl.textContent = `R$ ${parseFloat(session.dosage.price).toFixed(2).replace('.', ',')}`;
         pixQrContainer.innerHTML = `<img class="w-full h-full object-contain" src="data:image/jpeg;base64,${session.pix.qr_code_base64}" alt="QR Code PIX" />`;
         pixCodeInput.value = session.pix.qr_code;
         startPaymentPolling(session.paymentId);
@@ -70,10 +70,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function initializeApp() {
         try {
+            console.log(`[DIAGNÓSTICO] Tentando conectar à API em: ${API_URL}`);
             const response = await fetch(`${API_URL}/client-data`);
             if (!response.ok) throw new Error(`Servidor respondeu com status ${response.status}`);
             const data = await response.json();
 
+            console.log("[DIAGNÓSTICO] Conexão com o servidor bem-sucedida!");
             bannerImage.src = data.bannerUrl;
             loadingDosages.classList.add('hidden');
             dosagesContainer.innerHTML = '';
@@ -81,7 +83,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const card = document.createElement('button');
                 card.className = 'w-full flex justify-between items-center p-4 dosage-card text-left';
                 card.style.animationDelay = `${index * 100}ms`;
-                card.innerHTML = `<div><p class="text-lg font-semibold">${dose.name}</p><p class="text-sm" style="color: var(--secondary-text);">${dose.ml}ml</p></div><span class="text-lg font-bold" style="color: var(--accent-color);">R$ ${dose.price.toFixed(2).replace('.',',')}</span>`;
+                // ##### CORREÇÃO APLICADA AQUI #####
+                const priceAsNumber = parseFloat(dose.price);
+                card.innerHTML = `<div><p class="text-lg font-semibold">${dose.name}</p><p class="text-sm" style="color: var(--secondary-text);">${dose.ml}ml</p></div><span class="text-lg font-bold" style="color: var(--accent-color);">R$ ${priceAsNumber.toFixed(2).replace('.',',')}</span>`;
                 card.addEventListener('click', () => handleDosageSelection(dose));
                 dosagesContainer.appendChild(card);
             });
@@ -89,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Falha ao inicializar:", error);
             loadingDosages.classList.add('hidden');
             errorContainer.classList.remove('hidden');
-            errorMessageEl.textContent = "Falha ao conectar com o servidor. Verifique se ele está rodando e recarregue a página.";
+            errorMessageEl.textContent = `Falha ao conectar com o servidor em ${API_URL}. Verifique a URL e o status do deploy no Render.`;
         }
     }
 
@@ -115,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 pix: paymentData.pix
             });
             
-            pixAmountEl.textContent = `R$ ${currentDosage.price.toFixed(2).replace('.', ',')}`;
+            pixAmountEl.textContent = `R$ ${parseFloat(currentDosage.price).toFixed(2).replace('.', ',')}`;
             pixQrContainer.innerHTML = `<img class="w-full h-full object-contain" src="data:image/jpeg;base64,${paymentData.pix.qr_code_base64}" alt="QR Code PIX" />`;
             pixCodeInput.value = paymentData.pix.qr_code;
             startPaymentPolling(paymentData.paymentId);
