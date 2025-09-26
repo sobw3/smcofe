@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartCoffee</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --background-color: #FDFBF8; --primary-text: #4E342E; --secondary-text: #795548;
+            --accent-color: #8D6E63; --card-background: #FFFFFF; --border-color: #D7CCC8; --error-color: #c53030;
+        }
+        body { font-family: 'Montserrat', sans-serif; background-color: var(--background-color); color: var(--primary-text); overscroll-behavior: none; }
+        .font-logo { font-family: 'Cormorant Garamond', serif; }
+        .dosage-card {
+            background-color: var(--card-background); border: 1px solid var(--border-color); border-radius: 12px;
+            transition: all 0.3s ease; opacity: 0; transform: translateY(20px); animation: slideUpFadeIn 0.5s ease forwards;
+        }
+        .dosage-card:hover:not(:disabled) { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+        .btn-primary { background-color: var(--primary-text); color: var(--background-color); border-radius: 8px; padding: 12px 24px; transition: background-color 0.3s ease; font-weight: 500; }
+        .btn-primary:hover { background-color: var(--secondary-text); }
+        .btn-secondary { background-color: transparent; color: var(--secondary-text); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px 24px; transition: all 0.3s ease; }
+        .btn-secondary:hover { background-color: var(--primary-text); border-color: var(--primary-text); color: var(--background-color); }
+        .modal { transition: opacity 0.3s ease; }
+        .modal-content { animation: slideUpFadeIn 0.4s ease forwards; }
+        .hidden { display: none; }
+        .view {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--background-color);
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateX(100%);
+        }
+        .view.active { transform: translateX(0); }
+        .view.exiting { transform: translateX(-100%); }
+        @keyframes slideUpFadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1); border-left-color: var(--primary-text);
+            border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;
+        }
+        .status-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); transform: translateX(100%);
+        }
+        .status-screen.active { transform: translateX(0%); }
+        .status-screen.exiting { transform: translateX(-100%); }
+        .status-title { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 600; margin-top: 1.5rem; text-align: center; }
+    </style>
+</head>
+<body class="overflow-x-hidden">
+
+    <main id="main-view" class="view active">
+        <div class="max-w-md mx-auto min-h-screen flex flex-col p-4">
+            <header class="flex justify-between items-center py-4">
+                <h1 class="font-logo text-3xl font-bold">SmartCoffee</h1>
+                <button id="menu-btn" class="p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                </button>
+            </header>
+
+            <div id="banner-container" class="mt-4 rounded-xl overflow-hidden h-48 bg-gray-200">
+                <img id="banner-image" src="" alt="Cafeteira SmartCoffee" class="w-full h-full object-cover">
+            </div>
+
+            <section class="mt-8 flex-grow">
+                <h2 class="font-logo text-2xl font-semibold mb-4 text-center">Escolha sua dosagem</h2>
+                <div id="dosages-container" class="space-y-3">
+                    <div id="loading-dosages" class="text-center p-8">
+                        <div class="spinner mx-auto"></div>
+                        <p class="mt-4 text-sm text-gray-500">Carregando...</p>
+                    </div>
+                </div>
+                 <div id="error-container" class="hidden text-center p-8 bg-red-50 border border-red-200 rounded-lg">
+                    <p class="font-semibold text-red-700">Ocorreu um Erro</p>
+                    <p id="error-message" class="text-sm text-red-600 mt-2"></p>
+                </div>
+            </section>
+
+            <footer class="text-center py-4 text-xs" style="color: var(--secondary-text);">&copy; 2025 SmartCoffee™</footer>
+        </div>
+    </main>
+    
+    <section id="pix-payment-view" class="view">
+        <div class="max-w-md mx-auto min-h-screen flex flex-col p-4">
+             <header class="flex justify-start items-center w-full py-4">
+                <button id="cancel-pix-btn" class="p-2 -ml-2 text-gray-500 hover:text-gray-900 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
+            </header>
+            <div class="flex-grow flex flex-col items-center justify-center text-center -mt-20">
+                <h2 class="font-logo text-2xl font-bold mb-2">Pagamento PIX</h2>
+                <p class="text-sm text-gray-600 mb-4 max-w-xs">Escaneie o QR Code com o app do seu banco para pagar.</p>
+                <div id="pix-qr-code-container" class="p-3 bg-white border border-gray-200 rounded-lg my-4 w-48 h-48 flex items-center justify-center"></div>
+                <p class="font-bold text-xl my-3" id="pix-amount"></p>
+                <button id="copy-pix-btn" class="btn-primary w-full max-w-xs text-sm py-3">Copiar Código PIX</button>
+                <input type="text" id="pix-code-input" class="sr-only">
+
+                <div class="mt-6 flex flex-col items-center">
+                    <div class="spinner" style="width: 32px; height: 32px; border-width: 3px;"></div>
+                    <p class="mt-3 text-sm font-semibold">Aguardando pagamento...</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="status-view" class="view">
+        <div class="relative w-full h-screen overflow-hidden">
+            <div id="payment-confirmed" class="status-screen">
+                <svg class="w-16 h-16 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <h2 class="status-title">Pagamento Confirmado!</h2>
+            </div>
+            <div id="attention-warning" class="status-screen">
+                <svg class="w-16 h-16 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <h2 class="status-title">Posicione seu copo</h2>
+            </div>
+            <div id="filling-cup" class="status-screen">
+                <div class="spinner"></div>
+                <h2 class="status-title">Preparando seu café...</h2>
+            </div>
+            <div id="enjoy-coffee" class="status-screen">
+                <svg class="w-16 h-16 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" /></svg>
+                <h2 class="status-title">Bom café, volte sempre!</h2>
+            </div>
+        </div>
+    </section>
+    
+    <div id="menu-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden">
+        <div class="modal-content bg-white rounded-lg shadow-xl w-full max-w-xs text-center p-6">
+            <h3 class="font-logo text-2xl mb-6">Menu</h3>
+            <div class="space-y-3">
+                <a href="/admin.html" class="block btn-secondary w-full">Acesso Administrativo</a>
+                <a href="https://wa.me/5500000000000?text=Ol%C3%A1%21+Gostaria+de+ter+uma+SmartCoffee+no+meu+espa%C3%A7o." target="_blank" class="block btn-secondary w-full">Seja um Parceiro</a>
+            </div>
+            <button id="close-menu-btn" class="mt-6 text-sm font-semibold" style="color: var(--secondary-text);">Fechar</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
+
